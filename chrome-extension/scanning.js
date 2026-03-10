@@ -26,7 +26,7 @@
       // Check if user is logged in (authentication required)
       const token = await getAuthToken();
       if (!token) {
-        throw new Error('Authentication required. Please login to use the phishing detection service.');
+        throw new Error('Authentication required. Please login to use the PhishGuardAI service.');
       }
 
       const apiUrl = await getApiUrl();

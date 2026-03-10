@@ -1,4 +1,4 @@
-# Phishing Finder Chrome Extension
+# PhishGuardAI Chrome Extension
 
 A Chrome extension that detects and blocks phishing websites using AI-powered analysis via Google Gemini.
 

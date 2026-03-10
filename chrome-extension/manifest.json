@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Phishing Finder",
+  "name": "PhishGuardAI",
   "version": "1.0.0",
-  "description": "Detects and blocks phishing websites using AI",
+  "description": "AI-powered protection against phishing, every click of the way.",
   "permissions": [
     "webRequest",
     "tabs",

@@ -253,7 +253,7 @@
       if (!isAuth) {
         scanResultDiv.className = 'scan-result show';
         resultHeader.innerHTML = '🔒 Login Required';
-        resultDetails.textContent = 'Please login to use the phishing detection service. Use the login form above.';
+        resultDetails.textContent = 'Please login to use the PhishGuardAI service. Use the login form above.';
         return null;
       }
 
@@ -273,7 +273,7 @@
       if (!authToken) {
         scanResultDiv.className = 'scan-result show';
         resultHeader.innerHTML = '🔒 Login Required';
-        resultDetails.textContent = 'Please login to use the phishing detection service. Use the login form above.';
+        resultDetails.textContent = 'Please login to use the PhishGuardAI service. Use the login form above.';
         return null;
       }
 
@@ -340,7 +340,7 @@
     
     if (result.isPhishing) {
       scanResultDiv.className = 'scan-result phishing show';
-      resultHeader.innerHTML = '⚠️ Phishing Detected';
+      resultHeader.innerHTML = '⚠️ Threat Detected';
       let details = 'This website has been identified as a potential phishing site.';
       if (result.reason) {
         details += `\n\nReason: ${result.reason}`;

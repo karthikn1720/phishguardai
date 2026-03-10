@@ -1,4 +1,4 @@
-# Phishing Finder Setup Guide
+# PhishGuardAI Setup Guide
 
 ## Quick Start
 
@@ -61,7 +61,7 @@ The API will be available at `http://localhost:3000/api/check-url`
 - **Route**: `/api/check-url` (POST)
 - **Function**: Checks URL against database, calls Gemini if needed
 - **Database**: PostgreSQL with Prisma ORM
-- **AI**: Google Gemini LLM for phishing detection
+- **AI**: Google Gemini LLM for PhishGuardAI
 
 ### Chrome Extension
 

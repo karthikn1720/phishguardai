@@ -51,7 +51,7 @@
 
     // Create banner
     warningBanner = document.createElement('div');
-    warningBanner.id = 'phishing-finder-warning-banner';
+    warningBanner.id = 'phishguardai-warning-banner';
     
     const types = Array.isArray(warningType) ? warningType : (warningType ? [warningType] : []);
     const typeList = types.map(t => typeLabels[t.trim()] || t.trim()).join(', ');
@@ -68,7 +68,7 @@
           ${severity ? `<span style="margin-left: 8px; padding: 2px 8px; background: #fef3c7; border-radius: 4px; font-size: 11px;">${severity}</span>` : ''}
         </div>
         ${warningReason ? `<div style="font-size: 12px; color: #92400e; margin-top: 4px; flex-basis: 100%;">${warningReason}</div>` : ''}
-        <button id="phishing-finder-warning-dismiss" style="margin-left: auto; background: transparent; border: 1px solid #fde68a; color: #92400e; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Dismiss</button>
+        <button id="phishguardai-warning-dismiss" style="margin-left: auto; background: transparent; border: 1px solid #fde68a; color: #92400e; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Dismiss</button>
       </div>
     `;
     
@@ -87,7 +87,7 @@
     `;
 
     // Dismiss button handler
-    const dismissBtn = warningBanner.querySelector('#phishing-finder-warning-dismiss');
+    const dismissBtn = warningBanner.querySelector('#phishguardai-warning-dismiss');
     dismissBtn.addEventListener('click', () => {
       removeWarningBanner();
     });

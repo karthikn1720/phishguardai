@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Phishing Finder',
-  description: 'Admin dashboard for Phishing Finder',
+  title: 'PhishGuardAI',
+  description: 'Admin dashboard for PhishGuardAI',
 }
 
 export default function RootLayout({
