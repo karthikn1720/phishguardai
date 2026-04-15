@@ -3,12 +3,7 @@ import { HumanMessage, AIMessage, ToolMessage, BaseMessage } from '@langchain/co
 import { FetchWebsiteContentTool } from './tools/fetch-website-content';
 import { normalizeUrl } from './gemini';
 
-const apiKey = process.env.GEMINI_API_KEY;
 const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.0-flash-exp';
-
-if (!apiKey) {
-  throw new Error('GEMINI_API_KEY is not set in environment variables');
-}
 
 export interface PhishingCheckResult {
   isPhishing: boolean;
@@ -29,6 +24,10 @@ export async function checkPhishingUrlWithLangChain(url: string): Promise<Phishi
     console.log('[langchain-phishing] Starting phishing check for URL:', url);
     const normalizedUrl = normalizeUrl(url);
     console.log('[langchain-phishing] Using model:', modelName);
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not set in environment variables');
+    }
 
     // Initialize the model
     const model = new ChatGoogleGenerativeAI({

@@ -1,13 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const apiKey = process.env.GEMINI_API_KEY;
 const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.0-flash-exp';
-
-if (!apiKey) {
-  throw new Error('GEMINI_API_KEY is not set in environment variables');
-}
-
-const genAI = new GoogleGenerativeAI(apiKey);
 
 export interface PhishingCheckResult {
   isPhishing: boolean;
@@ -45,7 +38,11 @@ export async function checkPhishingUrl(url: string): Promise<PhishingCheckResult
     console.log('[gemini] Starting phishing check for URL:', url);
     const normalizedUrl = normalizeUrl(url);
     console.log('[gemini] Using model:', modelName);
-    
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not set in environment variables');
+    }
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt = `Analyze the following URL and determine if it is a phishing site. Consider:
