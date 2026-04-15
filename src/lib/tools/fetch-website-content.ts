@@ -216,7 +216,7 @@ The tool will extract scripts, forms, links, and identify suspicious patterns.`;
     }
   }
 
-  private extractScripts($: cheerio.CheerioAPI): WebsiteContentAnalysis['scripts'] {
+  private extractScripts($: ReturnType<typeof cheerio.load>): WebsiteContentAnalysis['scripts'] {
     const inline: string[] = [];
     const external: string[] = [];
     const suspiciousPatterns: string[] = [];
@@ -243,7 +243,7 @@ The tool will extract scripts, forms, links, and identify suspicious patterns.`;
     return { inline, external, suspiciousPatterns };
   }
 
-  private extractForms($: cheerio.CheerioAPI): WebsiteContentAnalysis['forms'] {
+  private extractForms($: ReturnType<typeof cheerio.load>): WebsiteContentAnalysis['forms'] {
     const fields: Array<{ type: string; name?: string; placeholder?: string }> = [];
     const actions: string[] = [];
 
@@ -269,7 +269,7 @@ The tool will extract scripts, forms, links, and identify suspicious patterns.`;
     };
   }
 
-  private extractLinks($: cheerio.CheerioAPI, baseUrl: string): WebsiteContentAnalysis['links'] {
+  private extractLinks($: ReturnType<typeof cheerio.load>, baseUrl: string): WebsiteContentAnalysis['links'] {
     let internal = 0;
     let external = 0;
     const suspiciousDomains: string[] = [];
@@ -307,7 +307,7 @@ The tool will extract scripts, forms, links, and identify suspicious patterns.`;
   }
 
   private identifySuspiciousPatterns(
-    $: cheerio.CheerioAPI,
+    $: ReturnType<typeof cheerio.load>,
     scripts: WebsiteContentAnalysis['scripts'],
     forms: WebsiteContentAnalysis['forms']
   ): string[] {
@@ -436,7 +436,7 @@ The tool will extract scripts, forms, links, and identify suspicious patterns.`;
            scripts.inline.some(script => this.isSuspiciousInlineScript(script));
   }
 
-  private hasSuspiciousRedirects(scripts: WebsiteContentAnalysis['scripts'], $: cheerio.CheerioAPI): boolean {
+  private hasSuspiciousRedirects(scripts: WebsiteContentAnalysis['scripts'], $: ReturnType<typeof cheerio.load>): boolean {
     // Check scripts for redirects
     const redirectPatterns = [
       /window\.location\s*=/i,
