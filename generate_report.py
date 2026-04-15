@@ -12,10 +12,10 @@ doc = Document()
 section = doc.sections[0]
 section.page_width  = Inches(8.27)
 section.page_height = Inches(11.69)
-section.left_margin   = Inches(1.25)
-section.right_margin  = Inches(1.0)
-section.top_margin    = Inches(1.0)
-section.bottom_margin = Inches(1.0)
+section.left_margin   = Cm(3.75)   # 37.5mm (spec: 35–40mm)
+section.right_margin  = Cm(2.25)   # 22.5mm (spec: 20–25mm)
+section.top_margin    = Cm(3.25)   # 32.5mm (spec: 30–35mm)
+section.bottom_margin = Cm(2.75)   # 27.5mm (spec: 25–30mm)
 
 # ── HELPERS ─────────────────────────────────────────────────────────────────
 def set_font(run, size=12, bold=False, italic=False, name="Times New Roman"):
@@ -55,6 +55,18 @@ def body(text, align=WD_ALIGN_PARAGRAPH.JUSTIFY):
     p.paragraph_format.space_before = Pt(0)
     p.paragraph_format.space_after  = Pt(6)
     p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+    p.paragraph_format.left_indent = Cm(2.0)   # 20mm offset from left margin (spec requirement)
+    r = p.add_run(text)
+    set_font(r, 12)
+    return p
+
+def double_body(text, align=WD_ALIGN_PARAGRAPH.JUSTIFY):
+    """Double-spaced body paragraph — used for Abstract and Bonafide Certificate (spec requirement)."""
+    p = doc.add_paragraph()
+    p.alignment = align
+    p.paragraph_format.space_before = Pt(0)
+    p.paragraph_format.space_after  = Pt(6)
+    p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.DOUBLE
     r = p.add_run(text)
     set_font(r, 12)
     return p
@@ -75,8 +87,18 @@ def numbered(text, size=12):
 
 def chapter_heading(num, title):
     doc.add_page_break()
-    add_para(f"CHAPTER {num}", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=0)
-    add_para(title.upper(), WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=0, space_after=18)
+    # 50mm from top: top_margin=32.5mm, so add ~50pt space_before to reach 50mm
+    add_para(f"CHAPTER {num}", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True,
+             space_before=50, space_after=0)
+    add_para(title.upper(), WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True,
+             space_before=0, space_after=24)
+
+def appendix_heading(num, title):
+    doc.add_page_break()
+    add_para(f"APPENDIX {num}", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True,
+             space_before=50, space_after=0)
+    add_para(title.upper(), WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True,
+             space_before=0, space_after=24)
 
 def section_heading(number, title):
     add_para(f"{number} {title.upper()}", WD_ALIGN_PARAGRAPH.LEFT, 12, bold=True,
@@ -85,6 +107,49 @@ def section_heading(number, title):
 def subsection_heading(number, title):
     add_para(f"{number} {title}", WD_ALIGN_PARAGRAPH.LEFT, 12, bold=True,
              space_before=8, space_after=4)
+
+def setup_page_numbers(sec, fmt='decimal', start=1, suppress_first=False):
+    """Add right-aligned page numbers to section header. fmt: 'lowerRoman' or 'decimal'."""
+    sectPr = sec._sectPr
+    # Remove any existing pgNumType
+    for existing in sectPr.findall(qn('w:pgNumType')):
+        sectPr.remove(existing)
+    pgNumType = OxmlElement('w:pgNumType')
+    pgNumType.set(qn('w:fmt'), fmt)
+    pgNumType.set(qn('w:start'), str(start))
+    sectPr.append(pgNumType)
+
+    if suppress_first:
+        # Enable different first-page header
+        titlePg = OxmlElement('w:titlePg')
+        sectPr.append(titlePg)
+
+    header = sec.header
+    header.is_linked_to_previous = False
+
+    # Clear existing content
+    for p in header.paragraphs:
+        p.clear()
+
+    # Right-aligned page number field
+    hp = header.paragraphs[0]
+    hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    run = hp.add_run()
+    fldChar1 = OxmlElement('w:fldChar')
+    fldChar1.set(qn('w:fldCharType'), 'begin')
+    run._r.append(fldChar1)
+    instrText = OxmlElement('w:instrText')
+    instrText.text = 'PAGE'
+    run._r.append(instrText)
+    fldChar2 = OxmlElement('w:fldChar')
+    fldChar2.set(qn('w:fldCharType'), 'end')
+    run._r.append(fldChar2)
+    set_font(run, 12)
+
+    if suppress_first:
+        # First-page header stays blank (title page shows no number)
+        # w:titlePg is already set above; the first-page header will be blank by default
+        pass
 
 def img_placeholder(fig_num, caption):
     p = doc.add_paragraph()
@@ -105,6 +170,13 @@ def img_placeholder(fig_num, caption):
     set_font(rc, 11, italic=True)
 
 def add_table(headers, rows, caption_num, caption_text):
+    # Caption ABOVE table (spec requirement: table titles appear above tables)
+    cap = doc.add_paragraph()
+    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cap.paragraph_format.space_before = Pt(10)
+    cap.paragraph_format.space_after  = Pt(4)
+    rc = cap.add_run(f"Table {caption_num}: {caption_text}")
+    set_font(rc, 11, bold=True)
     table = doc.add_table(rows=1+len(rows), cols=len(headers))
     table.style = 'Table Grid'
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -127,12 +199,8 @@ def add_table(headers, rows, caption_num, caption_text):
             cell.text = ""
             r = cell.paragraphs[0].add_run(str(cell_text))
             set_font(r, 11)
-    cap = doc.add_paragraph()
-    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    cap.paragraph_format.space_before = Pt(4)
-    cap.paragraph_format.space_after  = Pt(10)
-    rc = cap.add_run(f"Table {caption_num}: {caption_text}")
-    set_font(rc, 11, bold=True)
+    # Add spacing after table
+    doc.add_paragraph().paragraph_format.space_after = Pt(6)
     return table
 
 def page_break():
@@ -173,17 +241,20 @@ add_para("CHENNAI 600 025", WD_ALIGN_PARAGRAPH.CENTER, 13, bold=True)
 add_para("")
 add_para("April 2026", WD_ALIGN_PARAGRAPH.CENTER, 13, bold=True)
 
+# Preliminary pages: Roman numerals (i on title page but suppressed, ii onward shown)
+setup_page_numbers(section, fmt='lowerRoman', start=1, suppress_first=True)
+
 # ════════════════════════════════════════════════════════════════════════════
 # BONAFIDE CERTIFICATE
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("BONAFIDE CERTIFICATE", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=18)
+add_para("BONAFIDE CERTIFICATE", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=18)
 body("Certified that the project report titled ")
 # Rebuild with mixed formatting
 doc.paragraphs[-1]._p.getparent().remove(doc.paragraphs[-1]._p)
 p = doc.add_paragraph()
 p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.DOUBLE   # spec: double spacing for Bonafide Certificate
 r1 = p.add_run("Certified that the project report titled ")
 set_font(r1, 12)
 r2 = p.add_run('"PhishGuardAI – AI-Powered Real-Time Phishing Detection System"')
@@ -222,10 +293,10 @@ for r_idx, (left, right) in enumerate([
 # CERTIFICATE OF VIVA-VOCE
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("CERTIFICATE OF VIVA – VOCE EXAMINATION", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=18)
+add_para("CERTIFICATE OF VIVA – VOCE EXAMINATION", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=18)
 p = doc.add_paragraph()
 p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.DOUBLE   # spec: double spacing for certificates
 r1 = p.add_run("This is to certify that Mr./Ms. ")
 set_font(r1, 12)
 r2 = p.add_run("[YOUR NAME]")
@@ -259,7 +330,7 @@ add_para("Address      :", WD_ALIGN_PARAGRAPH.CENTER, 12)
 # ACKNOWLEDGEMENT
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("ACKNOWLEDGEMENT", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=18)
+add_para("ACKNOWLEDGEMENT", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=18)
 
 ack_paras = [
     "I extend my sincere gratitude to the faculty at Anna University, Chennai for their invaluable support and guidance throughout this project. I would like to express my deep appreciation to my course instructor at the Centre for Distance Education, Anna University, Chennai – 25, whose encouragement and insightful feedback were instrumental throughout the course of this work.",
@@ -277,7 +348,7 @@ add_para("([YOUR NAME])", WD_ALIGN_PARAGRAPH.RIGHT, 12, bold=True, space_before=
 # TABLE OF CONTENTS
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("TABLE OF CONTENTS", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=12)
+add_para("TABLE OF CONTENTS", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=12)
 
 toc_data = [
     ("Chapter No.", "Title", "Page No."),
@@ -336,7 +407,7 @@ for ri, (col1, col2, col3) in enumerate(toc_data):
 # LIST OF TABLES
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("LIST OF TABLES", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=12)
+add_para("LIST OF TABLES", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=12)
 lot_data = [
     ("Table No.", "Title of Table", "Page No."),
     ("2.1", "Hardware Requirements", ""),
@@ -368,7 +439,7 @@ for ri, row_data in enumerate(lot_data):
 # LIST OF FIGURES
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("LIST OF FIGURES", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=12)
+add_para("LIST OF FIGURES", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=12)
 lof_data = [
     ("Figure No.", "Title of Figure", "Page No."),
     ("2.1", "Use Case Diagram", ""),
@@ -401,7 +472,7 @@ for ri, row_data in enumerate(lof_data):
 # ABSTRACT (ENGLISH)
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("ABSTRACT", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=18)
+add_para("ABSTRACT", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=18)
 abstract_paras = [
     "In the modern digital landscape, phishing attacks represent one of the most pervasive and financially devastating cybersecurity threats. With over 3.4 billion phishing attempts occurring daily worldwide and an average organizational loss of $4.65 million per incident, traditional blacklist-based and heuristic detection methods have proven inadequate against the rapidly evolving tactics of modern adversaries.",
     'This project, titled "PhishGuardAI – AI-Powered Real-Time Phishing Detection System," presents an intelligent, browser-integrated security solution that leverages cutting-edge Artificial Intelligence to detect and prevent phishing attacks in real time. The system operates as a Chrome browser extension (Manifest V3) seamlessly integrated with a Next.js 16 backend API and a PostgreSQL database.',
@@ -410,14 +481,14 @@ abstract_paras = [
     "The solution is built on a full-stack TypeScript architecture using Next.js 16, Prisma ORM, JWT authentication, bcryptjs password hashing, and Radix UI components. The system demonstrates how modern LLM-based intelligence can be deployed as a practical, real-time security tool that adapts to novel attack patterns without requiring manual rule updates or retraining.",
 ]
 for t in abstract_paras:
-    body(t)
+    double_body(t)   # spec: Abstract must be double-spaced
     add_para("")
 
 # ════════════════════════════════════════════════════════════════════════════
 # ABSTRACT (TAMIL)
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("சுருக்கம்", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=18)
+add_para("சுருக்கம்", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=18)
 tamil_paras = [
     "இன்றைய டிஜிட்டல் காலகட்டத்தில், ஃபிஷிங் தாக்குதல்கள் மிகவும் அதிகமான இணைய பாதுகாப்பு அச்சுறுத்தல்களில் ஒன்றாக உள்ளன. தினமும் உலகளவில் 3.4 பில்லியனுக்கும் அதிகமான ஃபிஷிங் முயற்சிகள் நடைபெறுகின்றன, மேலும் ஒவ்வொரு நிறுவனத்திற்கும் சராசரியாக $4.65 மில்லியன் இழப்பு ஏற்படுகிறது.",
     '"PhishGuardAI" என்ற இந்த திட்டம், செயற்கை நுண்ணறிவை பயன்படுத்தி உண்மையான நேரத்தில் ஃபிஷிங் தளங்களை கண்டறிந்து தடுக்கும் ஒரு நவீன Chrome பிரவுசர் நீட்டிப்பாகும். Google Gemini பெரிய மொழி மாதிரி மற்றும் LangChain கட்டமைப்பை கொண்டு URL மற்றும் வலைத்தள உள்ளடக்கத்தை ஆழமாக பகுப்பாய்வு செய்கிறது.',
@@ -426,13 +497,22 @@ tamil_paras = [
     "[Note: Tamil abstract placeholder — please verify/complete the Tamil translation with a language expert before final submission.]",
 ]
 for t in tamil_paras:
-    body(t)
+    double_body(t)   # spec: Abstract must be double-spaced
     add_para("")
 
 # ════════════════════════════════════════════════════════════════════════════
 # CHAPTER 1 — INTRODUCTION
+# (New section here: Arabic page numbering restarts at 1 for main text)
 # ════════════════════════════════════════════════════════════════════════════
-chapter_heading("I", "INTRODUCTION")
+main_section = doc.add_section()
+main_section.left_margin   = Cm(3.75)
+main_section.right_margin  = Cm(2.25)
+main_section.top_margin    = Cm(3.25)
+main_section.bottom_margin = Cm(2.75)
+setup_page_numbers(main_section, fmt='decimal', start=1)
+# Chapter heading without extra page break (section break above already starts new page)
+add_para("CHAPTER I", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=0)
+add_para("INTRODUCTION", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=0, space_after=24)
 
 section_heading("1.1", "OVERVIEW")
 body("In the contemporary digital landscape, phishing attacks have emerged as one of the most significant and persistent cybersecurity threats facing individuals, organizations, and critical infrastructure worldwide. Unlike many other forms of cyberattacks that exploit technical vulnerabilities in software systems, phishing specifically targets human psychology — manipulating users into voluntarily divulging sensitive information such as login credentials, financial details, and personal identification data.")
@@ -1003,7 +1083,7 @@ body("In conclusion, PhishGuardAI makes a meaningful contribution to the interse
 # REFERENCES
 # ════════════════════════════════════════════════════════════════════════════
 page_break()
-add_para("REFERENCES", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=18)
+add_para("REFERENCES", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_before=50, space_after=18)
 refs = [
     '[1] Verizon. (2023). "2023 Data Breach Investigations Report." Verizon Business. Available at: https://www.verizon.com/business/resources/reports/dbir/',
     '[2] FBI Internet Crime Complaint Center (IC3). (2023). "2023 Internet Crime Report." Federal Bureau of Investigation.',
@@ -1023,18 +1103,15 @@ refs = [
 ]
 for ref in refs:
     p = doc.add_paragraph()
-    p.paragraph_format.space_after = Pt(6)
-    p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE   # spec: references single-spaced
     r = p.add_run(ref)
     set_font(r, 12)
 
 # ════════════════════════════════════════════════════════════════════════════
 # APPENDICES
 # ════════════════════════════════════════════════════════════════════════════
-page_break()
-add_para("APPENDICES", WD_ALIGN_PARAGRAPH.CENTER, 14, bold=True, space_after=18)
-
-add_para("APPENDIX 1: SYSTEM INSTALLATION AND SETUP GUIDE", WD_ALIGN_PARAGRAPH.LEFT, 13, bold=True, space_after=10)
+appendix_heading("1", "SYSTEM INSTALLATION AND SETUP GUIDE")
 body("This appendix provides step-by-step instructions for installing and configuring PhishGuardAI in a development environment.")
 add_para("")
 add_para("Prerequisites", WD_ALIGN_PARAGRAPH.LEFT, 12, bold=True)
@@ -1052,22 +1129,21 @@ numbered("Create environment file: cp .env.example .env")
 numbered("Configure .env variables: DATABASE_URL (PostgreSQL connection), GEMINI_API_KEY (from Google AI Studio), GEMINI_MODEL_NAME (gemini-2.0-flash), JWT_SECRET (random 32+ character string)")
 numbered("Run Prisma migrations: npx prisma migrate dev")
 numbered("Seed admin user: npm run seed:admin")
-numbered("Start development server: npm run dev (runs on http://localhost:3000)")
+numbered("Start development server: npm run dev (runs on http://ec2-100-55-57-113.compute-1.amazonaws.com:3000)")
 
 add_para("Chrome Extension Setup", WD_ALIGN_PARAGRAPH.LEFT, 12, bold=True, space_before=8)
 numbered("Open Google Chrome and navigate to chrome://extensions")
 numbered("Enable 'Developer mode' toggle (top right)")
 numbered("Click 'Load unpacked' and select the chrome-extension directory")
 numbered("The PhishGuardAI extension icon appears in the Chrome toolbar")
-numbered("Click the extension icon and register/login with the API URL set to http://localhost:3000")
+numbered("Click the extension icon and register/login with the API URL set to http://ec2-100-55-57-113.compute-1.amazonaws.com:3000")
 
 add_para("Admin Dashboard Access", WD_ALIGN_PARAGRAPH.LEFT, 12, bold=True, space_before=8)
-numbered("Navigate to http://localhost:3000/admin/login in your browser")
+numbered("Navigate to http://ec2-100-55-57-113.compute-1.amazonaws.com:3000/admin/login in your browser")
 numbered("Login with the admin credentials created by the seed script (admin@admin.com / Password@123)")
 numbered("The URL Checks and Audit Records tabs are available upon successful login")
 
-page_break()
-add_para("APPENDIX 2: API RESPONSE EXAMPLES", WD_ALIGN_PARAGRAPH.LEFT, 13, bold=True, space_after=10)
+appendix_heading("2", "API RESPONSE EXAMPLES")
 body("This appendix provides sample API request and response examples for the key endpoints.")
 add_para("")
 
@@ -1089,8 +1165,7 @@ add_para("Sample: GET /api/admin/urls?page=1&limit=10&isPhishing=true", WD_ALIGN
 body('Headers: Authorization: Bearer [ADMIN-JWT-TOKEN]')
 body('Success Response (200): { "data": [{ "id": "uuid", "url": "https://phishing-example.com", "isPhishing": true, "confidence": 0.96, "reason": "...", "checkedAt": "2024-01-15T10:30:00Z" }, ...], "total": 45, "page": 1, "limit": 10 }')
 
-page_break()
-add_para("APPENDIX 3: LANGCHAIN TOOL CALLING IMPLEMENTATION DETAILS", WD_ALIGN_PARAGRAPH.LEFT, 13, bold=True, space_after=10)
+appendix_heading("3", "LANGCHAIN TOOL CALLING IMPLEMENTATION DETAILS")
 body("This appendix provides detailed documentation of the LangChain tool calling implementation used in the PhishGuardAI analysis engine.")
 add_para("")
 

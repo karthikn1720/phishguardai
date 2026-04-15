@@ -38,7 +38,7 @@ npm run prisma:generate
 npm run dev
 ```
 
-The API will be available at `http://localhost:3000/api/check-url`
+The API will be available at `http://ec2-100-55-57-113.compute-1.amazonaws.com:3000/api/check-url`
 
 ### 5. Load Chrome Extension
 
@@ -104,7 +104,7 @@ The `UrlCheck` model stores:
 ## Troubleshooting
 
 ### Extension not working
-- Ensure backend is running on `http://localhost:3000`
+- Ensure backend is running on `http://ec2-100-55-57-113.compute-1.amazonaws.com:3000`
 - Check browser console for errors
 - Verify extension is enabled in `chrome://extensions/`
 

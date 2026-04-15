@@ -15,7 +15,7 @@ A Chrome extension that detects and blocks phishing websites using AI-powered an
 ### Prerequisites
 
 1. **Backend API**: The extension requires the Next.js backend API to be running
-   - Make sure the backend is running on `http://localhost:3000` (or update the API URL in extension settings)
+   - Make sure the backend is running on `http://ec2-100-55-57-113.compute-1.amazonaws.com:3000` (or update the API URL in extension settings)
    - Ensure the database is set up and migrations are run
    - Set `GEMINI_API_KEY` in your `.env` file
 
@@ -34,7 +34,7 @@ A Chrome extension that detects and blocks phishing websites using AI-powered an
    - Select the `chrome-extension` folder
 
 2. **Configure API URL** (if needed):
-   - The extension defaults to `http://localhost:3000/api/check-url`
+   - The extension defaults to `http://ec2-100-55-57-113.compute-1.amazonaws.com:3000/api/check-url`
    - To change this, you can modify the `DEFAULT_API_URL` in `api-client.js` and `background.js`
    - Or use the extension's storage API to set a custom URL (future feature)
 

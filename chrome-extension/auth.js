@@ -1,6 +1,6 @@
 // Authentication utilities for Chrome Extension
 
-const DEFAULT_API_URL = 'http://localhost:3000';
+const DEFAULT_API_URL = 'http://ec2-100-55-57-113.compute-1.amazonaws.com:3000';
 
 /**
  * Get the API base URL from storage

@@ -1,5 +1,5 @@
 // API client for communicating with the backend
-const DEFAULT_API_URL = 'http://localhost:3000/api/check-url';
+const DEFAULT_API_URL = 'http://ec2-100-55-57-113.compute-1.amazonaws.com:3000/api/check-url';
 
 /**
  * Gets the configured API URL from storage, or uses default

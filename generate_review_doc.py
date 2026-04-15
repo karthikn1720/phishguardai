@@ -353,7 +353,7 @@ def build_section1(doc):
 
     # 1.5 API Design
     add_heading(doc, "1.5 API Design", level=2)
-    add_bullet(doc, " http://localhost:3000/api/", bold_prefix="Base URL:")
+    add_bullet(doc, " http://ec2-100-55-57-113.compute-1.amazonaws.com:3000/api/", bold_prefix="Base URL:")
     add_bullet(doc, " JWT Bearer token required on protected routes", bold_prefix="Authentication:")
     add_bullet(doc, ' { data: T } wrapper with appropriate HTTP status codes', bold_prefix="Response Format:")
     add_bullet(doc, " Admin endpoints require ADMIN role in JWT payload", bold_prefix="Role Guard:")

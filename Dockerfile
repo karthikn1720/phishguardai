@@ -17,7 +17,7 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=deps /app/prisma/generated ./prisma/generated
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -42,9 +42,8 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 # Copy Prisma schema and generated client for runtime migrations
+# (generated client lives at prisma/generated/prisma per custom output path)
 COPY --from=builder /app/prisma ./prisma
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=deps /app/node_modules/@prisma ./node_modules/@prisma
 
 RUN chown -R nextjs:nodejs /app
 

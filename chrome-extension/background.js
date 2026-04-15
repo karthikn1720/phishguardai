@@ -1,7 +1,7 @@
 // Background service worker for phishing detection
 
 // API client functions
-const DEFAULT_API_URL = 'http://localhost:3000/api/check-url';
+const DEFAULT_API_URL = 'http://ec2-100-55-57-113.compute-1.amazonaws.com:3000/api/check-url';
 
 async function getApiUrl() {
   const result = await chrome.storage.sync.get(['apiUrl']);
@@ -467,7 +467,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'getApiUrl') {
     chrome.storage.sync.get(['apiUrl'], (result) => {
-      sendResponse({ apiUrl: result.apiUrl || 'http://localhost:3000/api/check-url' });
+      sendResponse({ apiUrl: result.apiUrl || 'http://ec2-100-55-57-113.compute-1.amazonaws.com:3000/api/check-url' });
     });
     return true;
   }
