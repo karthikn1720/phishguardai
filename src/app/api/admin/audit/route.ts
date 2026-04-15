@@ -50,10 +50,10 @@ export async function GET(request: NextRequest) {
     if (dateFrom || dateTo) {
       where.visitedAt = {};
       if (dateFrom) {
-        where.visitedAt.gte = new Date(dateFrom);
+        where.visitedAt.gte = new Date(`${dateFrom}T00:00:00.000Z`);
       }
       if (dateTo) {
-        where.visitedAt.lte = new Date(dateTo);
+        where.visitedAt.lte = new Date(`${dateTo}T23:59:59.999Z`);
       }
     }
 

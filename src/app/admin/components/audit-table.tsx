@@ -1,10 +1,15 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { format } from 'date-fns'
+import type { DateRange } from 'react-day-picker'
+import { CalendarIcon, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
 
 interface AuditRecord {
   id: string
@@ -41,8 +46,8 @@ export function AuditTable({ token }: AuditTableProps) {
   const [actionFilter, setActionFilter] = useState('')
   const [isPhishingFilter, setIsPhishingFilter] = useState<string>('')
   const [userSearch, setUserSearch] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const [limit, setLimit] = useState(50)
 
   const fetchData = async () => {
@@ -58,8 +63,9 @@ export function AuditTable({ token }: AuditTableProps) {
       if (actionFilter) params.append('action', actionFilter)
       if (isPhishingFilter) params.append('isPhishing', isPhishingFilter)
       if (userSearch) params.append('userSearch', userSearch)
-      if (dateFrom) params.append('dateFrom', dateFrom)
-      if (dateTo) params.append('dateTo', dateTo)
+      if (dateRange?.from) params.append('dateFrom', format(dateRange.from, 'yyyy-MM-dd'))
+      if (dateRange?.to) params.append('dateTo', format(dateRange.to, 'yyyy-MM-dd'))
+      else if (dateRange?.from) params.append('dateTo', format(dateRange.from, 'yyyy-MM-dd'))
 
       const response = await fetch(`/api/admin/audit?${params}`, {
         headers: {
@@ -84,7 +90,7 @@ export function AuditTable({ token }: AuditTableProps) {
 
   useEffect(() => {
     fetchData()
-  }, [page, sortBy, sortOrder, actionFilter, isPhishingFilter, userSearch, dateFrom, dateTo, limit])
+  }, [page, sortBy, sortOrder, actionFilter, isPhishingFilter, userSearch, dateRange, limit])
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -141,26 +147,53 @@ export function AuditTable({ token }: AuditTableProps) {
               <option value="true">Phishing</option>
               <option value="false">Safe</option>
             </Select>
-            <Input
-              type="date"
-              placeholder="From Date"
-              value={dateFrom}
-              onChange={(e) => {
-                setDateFrom(e.target.value)
-                setPage(1)
-              }}
-              className="w-[150px]"
-            />
-            <Input
-              type="date"
-              placeholder="To Date"
-              value={dateTo}
-              onChange={(e) => {
-                setDateTo(e.target.value)
-                setPage(1)
-              }}
-              className="w-[150px]"
-            />
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="min-w-[220px] justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <span>
+                        {format(dateRange.from, 'MMM d, yyyy')} –{' '}
+                        {format(dateRange.to, 'MMM d, yyyy')}
+                      </span>
+                    ) : (
+                      format(dateRange.from, 'MMM d, yyyy')
+                    )
+                  ) : (
+                    <span className="text-muted-foreground">Filter by date range</span>
+                  )}
+                  {dateRange?.from && (
+                    <X
+                      className="ml-auto h-4 w-4 opacity-50 hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDateRange(undefined)
+                        setPage(1)
+                      }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={(range) => {
+                    setDateRange(range)
+                    setPage(1)
+                    if (range?.from && range?.to && range.to > range.from) {
+                      setCalendarOpen(false)
+                    }
+                  }}
+                  numberOfMonths={2}
+                  disabled={{ after: new Date() }}
+                />
+              </PopoverContent>
+            </Popover>
             <Select
               value={limit.toString()}
               onChange={(e) => {

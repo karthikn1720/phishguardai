@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import { Sidebar } from './components/sidebar'
 
 export default function AdminLayout({
   children,
@@ -16,16 +16,11 @@ export default function AdminLayout({
   const isLoginPage = pathname === '/admin/login'
 
   useEffect(() => {
-    // Skip auth check on login page
-    if (isLoginPage) {
-      return
-    }
+    if (isLoginPage) return
 
-    // Check for token in localStorage (for web) or get from chrome.storage (for extension)
     const storedToken = localStorage.getItem('adminToken')
     if (storedToken) {
       setToken(storedToken)
-      // Decode token to get user info (simple base64 decode of payload)
       try {
         const payload = JSON.parse(atob(storedToken.split('.')[1]))
         setUser({ email: payload.email, role: payload.role })
@@ -42,38 +37,29 @@ export default function AdminLayout({
     router.push('/admin/login')
   }
 
-  // On login page, render children without header
   if (isLoginPage) {
     return <>{children}</>
   }
 
   if (!token) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <div className="flex items-center gap-4">
-            {user && (
-              <span className="text-sm text-muted-foreground">
-                {user.email} ({user.role})
-              </span>
-            )}
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8">{children}</main>
+    <div className="flex min-h-screen bg-background">
+      <Suspense>
+        <Sidebar user={user} onLogout={handleLogout} />
+      </Suspense>
+      <main className="flex-1 overflow-auto">
+        {children}
+      </main>
     </div>
   )
 }
-

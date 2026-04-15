@@ -1,6 +1,6 @@
 ================================================================================
                     FIRST REVIEW REPORT - PROJECT DOCUMENT
-            AI-Based Phishing Detection System
+                            PhishGuardAI
 ================================================================================
 
 [Your Name]
@@ -14,7 +14,7 @@
 1. TITLE OF THE PROJECT
 ================================================================================
 
-AI-Based Phishing Detection System
+PhishGuardAI
 
 This project aims to develop an intelligent browser extension that leverages 
 artificial intelligence to detect and prevent phishing attacks in real-time, 
